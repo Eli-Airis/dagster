@@ -330,6 +330,74 @@ mutation($executionParams: ExecutionParams!) {
 )
 
 
+LAUNCH_MULTIPLE_RUNS_MUTATION = (
+    ERROR_FRAGMENT
+    + """
+mutation($executionParamsList: [ExecutionParams!]!) {
+  launchMultipleRuns(executionParamsList: $executionParamsList) {
+    __typename
+    
+    ... on InvalidStepError {
+      invalidStepKey
+    }
+    ... on InvalidOutputError {
+      stepKey
+      invalidOutputName
+    }
+    ... on LaunchMultipleRunsSuccess {
+      runs {
+        ... on LaunchRunSuccess {
+          __typename
+          run {
+            runId
+            pipeline {
+              name
+            }
+            tags {
+              key
+              value
+            }
+            status
+            runConfigYaml
+            mode
+            resolvedOpSelection
+          }
+        }
+      }
+    }
+    ... on ConflictingExecutionParamsError {
+      message
+    }
+    ... on PresetNotFoundError {
+      preset
+      message
+    }
+    ... on RunConfigValidationInvalid {
+      pipelineName
+      errors {
+        __typename
+        message
+        path
+        reason
+      }
+    }
+    ... on PipelineNotFoundError {
+      message
+      pipelineName
+    }
+
+    ... on UnauthorizedError {
+      message
+    }
+    
+    ... on PythonError {
+      ...errorFragment
+    }
+  }
+}
+"""
+)
+
 LAUNCH_PIPELINE_REEXECUTION_MUTATION = (
     ERROR_FRAGMENT
     + """

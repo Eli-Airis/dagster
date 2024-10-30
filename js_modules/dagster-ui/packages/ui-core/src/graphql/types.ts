@@ -2211,9 +2211,18 @@ export type LaunchPipelineRunSuccess = {
   run: Run;
 };
 
+export type LaunchMultipleRunsSuccess = {
+  runs: Array<LaunchRunSuccess>;
+};
+
 export type LaunchRunMutation = {
   __typename: 'LaunchRunMutation';
   Output: LaunchRunResult;
+};
+
+export type LaunchMultipleRunsMutation = {
+  __typename: 'LaunchMultipleRunsMutation';
+  Output: LaunchMultipleRunsResult;
 };
 
 export type LaunchRunReexecutionMutation = {
@@ -2241,6 +2250,20 @@ export type LaunchRunResult =
   | InvalidStepError
   | InvalidSubsetError
   | LaunchRunSuccess
+  | NoModeProvidedError
+  | PipelineNotFoundError
+  | PresetNotFoundError
+  | PythonError
+  | RunConfigValidationInvalid
+  | RunConflict
+  | UnauthorizedError;
+
+export type LaunchMultipleRunsResult =
+  | ConflictingExecutionParamsError
+  | InvalidOutputError
+  | InvalidStepError
+  | InvalidSubsetError
+  | LaunchMultipleRunsSuccess
   | NoModeProvidedError
   | PipelineNotFoundError
   | PresetNotFoundError
@@ -2619,6 +2642,7 @@ export type Mutation = {
   launchPipelineExecution: LaunchRunResult;
   launchPipelineReexecution: LaunchRunReexecutionResult;
   launchRun: LaunchRunResult;
+  launchMultipleRuns: LaunchMultipleRunsResult;
   launchRunReexecution: LaunchRunReexecutionResult;
   logTelemetry: LogTelemetryMutationResult;
   reexecutePartitionBackfill: LaunchBackfillResult;
@@ -2697,6 +2721,10 @@ export type MutationLaunchPipelineReexecutionArgs = {
 
 export type MutationLaunchRunArgs = {
   executionParams: ExecutionParams;
+};
+
+export type MutationLaunchMultipleRunsArgs = {
+  executionParamsList: Array<ExecutionParams>;
 };
 
 export type MutationLaunchRunReexecutionArgs = {
@@ -9453,6 +9481,23 @@ export const buildLaunchRunMutation = (
   };
 };
 
+export const buildLaunchMultipleRunsMutation = (
+  overrides?: Partial<LaunchMultipleRunsMutation>,
+  _relationshipsToOmit: Set<string> = new Set(),
+): {__typename: 'LaunchMultipleRunsMutation'} & LaunchMultipleRunsMutation => {
+  const relationshipsToOmit: Set<string> = new Set(_relationshipsToOmit);
+  relationshipsToOmit.add('LaunchMultipleRunsMutation');
+  return {
+    __typename: 'LaunchMultipleRunsMutation',
+    Output:
+      overrides && overrides.hasOwnProperty('Output')
+        ? overrides.Output!
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+          ? ({} as ConflictingExecutionParamsError)
+          : buildConflictingExecutionParamsError({}, relationshipsToOmit),
+  };
+};
+
 export const buildLaunchRunReexecutionMutation = (
   overrides?: Partial<LaunchRunReexecutionMutation>,
   _relationshipsToOmit: Set<string> = new Set(),
@@ -10221,6 +10266,12 @@ export const buildMutation = (
     launchRun:
       overrides && overrides.hasOwnProperty('launchRun')
         ? overrides.launchRun!
+        : relationshipsToOmit.has('ConflictingExecutionParamsError')
+          ? ({} as ConflictingExecutionParamsError)
+          : buildConflictingExecutionParamsError({}, relationshipsToOmit),
+    launchMultipleRuns:
+      overrides && overrides.hasOwnProperty('launchMultipleRuns')
+        ? overrides.launchMultipleRuns!
         : relationshipsToOmit.has('ConflictingExecutionParamsError')
           ? ({} as ConflictingExecutionParamsError)
           : buildConflictingExecutionParamsError({}, relationshipsToOmit),

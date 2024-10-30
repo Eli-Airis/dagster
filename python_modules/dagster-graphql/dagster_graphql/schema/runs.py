@@ -11,6 +11,7 @@ from graphene.types.generic import GenericScalar
 
 from dagster_graphql.implementation.fetch_runs import get_run_ids, get_runs, get_runs_count
 from dagster_graphql.implementation.utils import UserFacingGraphQLError
+from dagster_graphql.schema.backfill import pipeline_execution_error_types
 from dagster_graphql.schema.errors import (
     GrapheneInvalidPipelineRunsFilterError,
     GraphenePythonError,
@@ -45,6 +46,13 @@ class GrapheneLaunchRunSuccess(graphene.ObjectType):
         name = "LaunchRunSuccess"
 
 
+class GrapheneLaunchMultipleRunsSuccess(graphene.ObjectType):
+    runs = graphene.List(GrapheneLaunchRunSuccess)
+
+    class Meta:
+        name = "LaunchMultipleRunsSuccess"
+
+
 class GrapheneRunGroup(graphene.ObjectType):
     rootRunId = graphene.NonNull(graphene.String)
     runs = graphene.List("dagster_graphql.schema.pipelines.pipeline.GrapheneRun")
@@ -69,21 +77,26 @@ class GrapheneRunGroups(graphene.ObjectType):
 
 
 launch_pipeline_run_result_types = (GrapheneLaunchRunSuccess,)
+launch_multiple_runs_result_types = (GrapheneLaunchMultipleRunsSuccess,)
 
 
 class GrapheneLaunchRunResult(graphene.Union):
     class Meta:
-        from dagster_graphql.schema.backfill import pipeline_execution_error_types
-
         types = launch_pipeline_run_result_types + pipeline_execution_error_types
 
         name = "LaunchRunResult"
 
 
+class GrapheneLaunchMultipleRunsResult(graphene.Union):
+    """Contains results from multiple pipeline launches."""
+
+    class Meta:
+        types = launch_multiple_runs_result_types + pipeline_execution_error_types
+        name = "LaunchMultipleRunsResult"
+
+
 class GrapheneLaunchRunReexecutionResult(graphene.Union):
     class Meta:
-        from dagster_graphql.schema.backfill import pipeline_execution_error_types
-
         types = launch_pipeline_run_result_types + pipeline_execution_error_types
 
         name = "LaunchRunReexecutionResult"
@@ -213,6 +226,7 @@ def parse_run_config_input(
 
 types = [
     GrapheneLaunchRunResult,
+    GrapheneLaunchMultipleRunsResult,
     GrapheneLaunchRunReexecutionResult,
     GrapheneLaunchPipelineRunSuccess,
     GrapheneLaunchRunSuccess,

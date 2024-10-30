@@ -1511,6 +1511,10 @@ type LaunchRunMutation {
   Output: LaunchRunResult!
 }
 
+type LaunchMultipleRunsMutation {
+  Output: LaunchMultipleRunsResult!
+}
+
 type LaunchRunReexecutionMutation {
   Output: LaunchRunReexecutionResult!
 }
@@ -2982,6 +2986,21 @@ union LaunchRunResult =
   | ConflictingExecutionParamsError
   | NoModeProvidedError
 
+union LaunchMultipleRunsResult =
+  | LaunchMultipleRunsSuccess
+  | InvalidStepError
+  | InvalidOutputError
+  | RunConfigValidationInvalid
+  | PipelineNotFoundError
+  | RunConflict
+  | UnauthorizedError
+  | PythonError
+  | InvalidSubsetError
+  | PresetNotFoundError
+  | ConflictingExecutionParamsError
+  | NoModeProvidedError
+}
+
 union LaunchRunReexecutionResult =
   | LaunchRunSuccess
   | InvalidStepError
@@ -3002,6 +3021,10 @@ interface LaunchPipelineRunSuccess {
 
 type LaunchRunSuccess implements LaunchPipelineRunSuccess {
   run: Run!
+}
+
+type LaunchMultipleRunsSuccess {
+  runs: [LaunchRunSuccess!]!
 }
 
 union RunsOrError = Runs | InvalidPipelineRunsFilterError | PythonError
@@ -3693,6 +3716,7 @@ type AutomationConditionEvaluationNode {
 type Mutation {
   launchPipelineExecution(executionParams: ExecutionParams!): LaunchRunResult!
   launchRun(executionParams: ExecutionParams!): LaunchRunResult!
+  launchMultipleRuns(executionParamsList: [ExecutionParams!]!): LaunchMultipleRunsResult!
   launchPipelineReexecution(
     executionParams: ExecutionParams
     reexecutionParams: ReexecutionParams

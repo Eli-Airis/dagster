@@ -7,7 +7,11 @@ import {StepSelection} from './StepSelection';
 import {TimeElapsed} from './TimeElapsed';
 import {RunFragment} from './types/RunFragments.types';
 import {RunTableRunFragment} from './types/RunTableRunFragment.types';
-import {LaunchPipelineExecutionMutation, RunTimeFragment} from './types/RunUtils.types';
+import {
+  LaunchMultipleRunsMutation,
+  LaunchPipelineExecutionMutation,
+  RunTimeFragment,
+} from './types/RunUtils.types';
 import {Mono} from '../../../ui-components/src';
 import {gql} from '../apollo-client';
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -115,6 +119,73 @@ export async function handleLaunchResult(
   }
 }
 
+export async function handleLaunchMultipleResult(
+  result: void | null | LaunchMultipleRunsMutation['launchMultipleRuns'],
+  history: History<unknown>,
+  options: {behavior: LaunchBehavior; preserveQuerystring?: boolean},
+) {
+  if (!result) {
+    showCustomAlert({body: `No data was returned. Did dagster-webserver crash?`});
+    return;
+  }
+  const successfulRunIds: string[] = [];
+
+  // show corresponding toasts
+  if (result.__typename === 'LaunchMultipleRunsSuccess') {
+    for (const individualResult of result.runs) {
+      successfulRunIds.push(individualResult.run.id);
+
+      const pathname = `/runs/${individualResult.run.id}`;
+      const search = options.preserveQuerystring ? history.location.search : '';
+      const openInSameTab = () => history.push({pathname, search});
+
+      // using open with multiple runs will spam new tabs
+      if (options.behavior === 'open') {
+        openInSameTab();
+      } else {
+        // toast is more preferred
+        await showSharedToaster({
+          intent: 'success',
+          message: (
+            <div>
+              Launched run <Mono>{individualResult.run.id.slice(0, 8)}</Mono>
+            </div>
+          ),
+          action: {
+            text: 'View',
+            href: history.createHref({pathname, search}),
+          },
+        });
+      }
+      document.dispatchEvent(new CustomEvent('run-launched'));
+    }
+  } else if (result.__typename === 'InvalidSubsetError') {
+    showCustomAlert({body: result.message});
+  } else if (result.__typename === 'PythonError') {
+    showCustomAlert({
+      title: 'Error',
+      body: <PythonErrorInfo error={result} />,
+    });
+  } else {
+    let message = `This multiple job launch cannot be executed with the provided config.`;
+
+    if ('errors' in result) {
+      message += ` Please fix the following errors:\n\n${result.errors
+        .map((error) => error.message)
+        .join('\n\n')}`;
+    }
+
+    showCustomAlert({body: message});
+  }
+
+  // link to runs page filtered to run IDs
+  const params = new URLSearchParams();
+  successfulRunIds.forEach((id) => params.append('q[]', `id:${id}`));
+
+  const queryString = `/runs?${params.toString()}`;
+  history.push(queryString);
+}
+
 function getBaseExecutionMetadata(run: RunFragment | RunTableRunFragment) {
   const hiddenTagKeys: string[] = [DagsterTag.IsResumeRetry, DagsterTag.StepSelection];
 
@@ -184,6 +255,37 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
         run {
           id
           pipelineName
+        }
+      }
+      ... on PipelineNotFoundError {
+        message
+      }
+      ... on InvalidSubsetError {
+        message
+      }
+      ... on RunConfigValidationInvalid {
+        errors {
+          message
+        }
+      }
+      ...PythonErrorFragment
+    }
+  }
+
+  ${PYTHON_ERROR_FRAGMENT}
+`;
+
+export const LAUNCH_MULTIPLE_RUNS_MUTATION = gql`
+  mutation LaunchMultipleRuns($executionParamsList: [ExecutionParams!]!) {
+    launchMultipleRuns(executionParamsList: $executionParamsList) {
+      ... on LaunchMultipleRunsSuccess {
+        runs {
+          ... on LaunchRunSuccess {
+            run {
+              id
+              jobName
+            }
+          }
         }
       }
       ... on PipelineNotFoundError {

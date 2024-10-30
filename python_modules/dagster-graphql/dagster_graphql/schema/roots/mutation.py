@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, Union
+from typing import List, Optional, Sequence, Union
 
 import dagster._check as check
 import graphene
@@ -78,6 +78,8 @@ from dagster_graphql.schema.partition_sets import (
 )
 from dagster_graphql.schema.pipelines.pipeline import GrapheneRun
 from dagster_graphql.schema.runs import (
+    GrapheneLaunchMultipleRunsResult,
+    GrapheneLaunchMultipleRunsSuccess,
     GrapheneLaunchRunReexecutionResult,
     GrapheneLaunchRunResult,
     GrapheneLaunchRunSuccess,
@@ -314,6 +316,34 @@ class GrapheneLaunchRunMutation(graphene.Mutation):
         self, graphene_info: ResolveInfo, executionParams: GrapheneExecutionParams
     ) -> Union[GrapheneLaunchRunSuccess, GrapheneError, GraphenePythonError]:
         return create_execution_params_and_launch_pipeline_exec(graphene_info, executionParams)
+
+
+class GrapheneLaunchMultipleRunsMutation(graphene.Mutation):
+    """Launches multiple job runs."""
+
+    Output = graphene.NonNull(GrapheneLaunchMultipleRunsResult)
+
+    class Arguments:
+        executionParamsList = graphene.List(graphene.NonNull(GrapheneExecutionParams))
+
+    class Meta:
+        name = "LaunchMultipleRunsMutation"
+
+    @capture_error
+    @require_permission_check(Permissions.LAUNCH_PIPELINE_EXECUTION)
+    def mutate(
+        self, graphene_info: ResolveInfo, executionParamsList: List[GrapheneExecutionParams]
+    ) -> Union[GrapheneLaunchMultipleRunsSuccess, GrapheneError, GraphenePythonError]:
+        results = []
+        for execution_params in executionParamsList:
+            try:
+                result = create_execution_params_and_launch_pipeline_exec(
+                    graphene_info, execution_params
+                )
+                results.append(result)
+            except Exception as e:
+                return GraphenePythonError(error_info=e)
+        return GrapheneLaunchMultipleRunsSuccess(runs=results)
 
 
 class GrapheneLaunchBackfillMutation(graphene.Mutation):
@@ -984,6 +1014,7 @@ class GrapheneMutation(graphene.ObjectType):
 
     launchPipelineExecution = GrapheneLaunchRunMutation.Field()
     launchRun = GrapheneLaunchRunMutation.Field()
+    launchMultipleRuns = GrapheneLaunchMultipleRunsMutation.Field()
     launchPipelineReexecution = GrapheneLaunchRunReexecutionMutation.Field()
     launchRunReexecution = GrapheneLaunchRunReexecutionMutation.Field()
     startSchedule = GrapheneStartScheduleMutation.Field()

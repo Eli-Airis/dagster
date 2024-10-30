@@ -2,6 +2,11 @@
 
 import * as Types from '../../graphql/types';
 
+export type SensorDryRunInstigationTick = Extract<
+  SensorDryRunMutation['sensorDryRun'],
+  {__typename: 'DryRunInstigationTick'}
+>;
+
 export type SensorDryRunMutationVariables = Types.Exact<{
   selectorData: Types.SensorSelector;
   cursor?: Types.InputMaybe<Types.Scalars['String']['input']>;
@@ -63,4 +68,5 @@ export type DynamicPartitionRequestFragment = {
   type: Types.DynamicPartitionsRequestType;
 };
 
-export const SensorDryRunMutationVersion = '018c498063838a146dbc76607bc84c92c235eaa73a3859b1c94b469bc76f5170';
+export const SensorDryRunMutationVersion =
+  '018c498063838a146dbc76607bc84c92c235eaa73a3859b1c94b469bc76f5170';
