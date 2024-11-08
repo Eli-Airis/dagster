@@ -3,6 +3,7 @@ from dagster_fivetran import FivetranWorkspace
 
 
 def test_basic_resource_request(
+        account_id: str,
     api_key: str,
     api_secret: str,
     connector_id: str,
@@ -10,7 +11,7 @@ def test_basic_resource_request(
     group_id: str,
     all_api_mocks: responses.RequestsMock,
 ) -> None:
-    resource = FivetranWorkspace(api_key=api_key, api_secret=api_secret)
+    resource = FivetranWorkspace(account_id=account_id, api_key=api_key, api_secret=api_secret)
 
     client = resource.get_client()
     client.get_connector_details(connector_id=connector_id)

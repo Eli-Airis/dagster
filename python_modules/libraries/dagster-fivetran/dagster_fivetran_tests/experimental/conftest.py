@@ -382,6 +382,11 @@ SAMPLE_SCHEMA_CONFIG_FOR_CONNECTOR = {
 }
 
 
+@pytest.fixture(name="account_id")
+def account_id_fixture() -> str:
+    return "account_id"
+
+
 @pytest.fixture(name="api_key")
 def api_key_fixture() -> str:
     return uuid.uuid4().hex
@@ -390,6 +395,8 @@ def api_key_fixture() -> str:
 @pytest.fixture(name="api_secret")
 def api_secret_fixture() -> str:
     return uuid.uuid4().hex
+
+
 
 
 @pytest.fixture(name="connector_id")
