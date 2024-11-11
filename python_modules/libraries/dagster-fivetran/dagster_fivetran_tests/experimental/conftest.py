@@ -397,8 +397,6 @@ def api_secret_fixture() -> str:
     return uuid.uuid4().hex
 
 
-
-
 @pytest.fixture(name="connector_id")
 def connector_id_fixture() -> str:
     return "connector_id"

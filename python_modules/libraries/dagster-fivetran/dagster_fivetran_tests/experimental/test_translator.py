@@ -4,7 +4,7 @@ from dagster_fivetran import FivetranWorkspace
 
 
 def test_fivetran_workspace_data_to_fivetran_connector_table_props_data(
-        account_id: str,
+    account_id: str,
     api_key: str,
     api_secret: str,
     fetch_workspace_data_api_mocks: Callable,
