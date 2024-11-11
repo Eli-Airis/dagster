@@ -2,7 +2,7 @@ from dagster import Definitions
 from dagster_airlift.core import (
     AirflowBasicAuthBackend,
     AirflowInstance,
-    build_airflow_polling_sensor_def,
+    build_airflow_polling_sensor,
     load_airflow_dag_asset_specs,
 )
 
@@ -41,11 +41,11 @@ customer_metrics_dag_asset = next(
     )
 )
 
-upstream_sensor = build_airflow_polling_sensor_def(
+upstream_sensor = build_airflow_polling_sensor(
     mapped_assets=[load_customers_dag_asset],
     airflow_instance=upstream_airflow_instance,
 )
-downstream_sensor = build_airflow_polling_sensor_def(
+downstream_sensor = build_airflow_polling_sensor(
     mapped_assets=[customer_metrics_dag_asset],
     airflow_instance=downstream_airflow_instance,
 )
